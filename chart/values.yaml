@@ -35,10 +35,10 @@ gateway:
   sectionName: https     # the TLS listener; the http listener only redirects
 
 route:
-  # Must fall inside the gateway's hostname (public: *.example.com,
-  # internal: *.internal.example.com).
+  # Must fall inside the gateway's hostname (public: *.apps.localhost,
+  # internal: *.internal.localhost).
   hostnames:
-    - hello.example.com
+    - hello.apps.localhost
   pathPrefix: /hello
   # Requests carrying this header skip the weighted split and always go
   # to the given version. Handy for testing a release before shifting traffic.

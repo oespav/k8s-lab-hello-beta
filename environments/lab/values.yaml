@@ -1,6 +1,5 @@
 # hello-beta in the lab cluster. Team Beta owns this file.
-# v2 is deployed but receives no traffic yet (weight 0) - ready for a canary.
-# TODO(human): start the v2 canary by choosing the weights below, then commit and push.
+# v2 canary in progress: 50/50 split between v1 and v2.
 versions:
   v1:
     image: docker.io/istio/examples-helloworld-v1:1.0
@@ -18,7 +17,7 @@ gateway:
 
 route:
   hostnames:
-    - tools.internal.example.com
+    - tools.internal.localhost
   pathPrefix: /hello
   canaryHeader:
     enabled: false

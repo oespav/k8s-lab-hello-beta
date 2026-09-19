@@ -2,7 +2,7 @@
 
 Owned by **team-beta**. A multi-version helloworld service, deployed by Argo CD
 from this repo into namespace `team-beta` and exposed at
-`https://tools.internal.example.com:9443/hello` (lab edge LB port) through the platform's shared `internal` gateway.
+`https://tools.internal.localhost:9443/hello` (lab edge LB port) through the platform's shared `internal` gateway.
 
 ## Layout
 
