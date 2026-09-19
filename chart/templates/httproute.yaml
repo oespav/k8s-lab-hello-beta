@@ -1,0 +1,43 @@
+{{- $fullname := include "helloworld.fullname" . }}
+{{- $canary := .Values.route.canaryHeader }}
+{{- if and $canary.enabled (not (hasKey .Values.versions $canary.version)) }}
+{{- fail (printf "route.canaryHeader.version %q is not a key in .Values.versions" $canary.version) }}
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "helloworld.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ required "gateway.name is required" .Values.gateway.name }}
+      namespace: {{ required "gateway.namespace is required" .Values.gateway.namespace }}
+      sectionName: {{ .Values.gateway.sectionName }}
+  hostnames:
+    {{- toYaml .Values.route.hostnames | nindent 4 }}
+  rules:
+    {{- if $canary.enabled }}
+    # Requests with the canary header always go to one version.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.route.pathPrefix }}
+          headers:
+            - name: {{ $canary.name }}
+              value: {{ $canary.value | quote }}
+      backendRefs:
+        - name: {{ $fullname }}-{{ $canary.version }}
+          port: {{ .Values.containerPort }}
+    {{- end }}
+    # Everyone else is split across versions by weight.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.route.pathPrefix }}
+      backendRefs:
+        {{- range $version, $cfg := .Values.versions }}
+        - name: {{ $fullname }}-{{ $version }}
+          port: {{ $.Values.containerPort }}
+          weight: {{ $cfg.weight | default 0 }}
+        {{- end }}

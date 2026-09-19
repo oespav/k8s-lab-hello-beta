@@ -1,0 +1,49 @@
+# Chart defaults. Per-environment overrides live in ../environments/<env>/values.yaml,
+# which is what Argo CD deploys (see the tenant file in platform-infra).
+
+# Each key is a version. Helm creates one Deployment and one Service per
+# entry, and the HTTPRoute splits traffic between them by weight.
+# Using a map (not a list) lets you override one field on the command line:
+#   --set versions.v2.weight=50
+versions:
+  v1:
+    image: docker.io/istio/examples-helloworld-v1:1.0
+    replicas: 1
+    weight: 80
+  v2:
+    image: docker.io/istio/examples-helloworld-v2:1.0
+    replicas: 1
+    weight: 20
+
+imagePullPolicy: IfNotPresent
+containerPort: 5000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+# The shared Gateway this app's HTTPRoute attaches to. Gateways are owned
+# by the platform team (platform-infra); this chart never creates one.
+# Your namespace must carry the gateway's access label (set by the platform
+# team in your tenant file) or the route is rejected: NotAllowedByListeners.
+gateway:
+  name: public
+  namespace: infra-gw
+  sectionName: https     # the TLS listener; the http listener only redirects
+
+route:
+  # Must fall inside the gateway's hostname (public: *.example.com,
+  # internal: *.internal.example.com).
+  hostnames:
+    - hello.example.com
+  pathPrefix: /hello
+  # Requests carrying this header skip the weighted split and always go
+  # to the given version. Handy for testing a release before shifting traffic.
+  canaryHeader:
+    enabled: true
+    name: x-canary
+    value: "true"
+    version: v2

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hello-beta
+description: hello-beta, a multi-version helloworld service owned by team-beta. Attaches an HTTPRoute to a shared platform gateway.
+type: application
+version: 1.0.0
+appVersion: "1.0"

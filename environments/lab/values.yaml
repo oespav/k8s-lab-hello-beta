@@ -1,0 +1,23 @@
+# hello-beta in the lab cluster. Team Beta owns this file.
+# v2 is deployed but receives no traffic yet (weight 0) - ready for a canary.
+versions:
+  v1:
+    image: docker.io/istio/examples-helloworld-v1:1.0
+    replicas: 1
+    weight: 100
+  v2:
+    image: docker.io/istio/examples-helloworld-v2:1.0
+    replicas: 1
+    weight: 0
+
+gateway:
+  name: internal
+  namespace: infra-gw
+  sectionName: https
+
+route:
+  hostnames:
+    - tools.internal.example.com
+  pathPrefix: /hello
+  canaryHeader:
+    enabled: false

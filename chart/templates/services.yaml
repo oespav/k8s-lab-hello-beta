@@ -1,0 +1,18 @@
+{{- /* One Service per version, so the HTTPRoute can weight each separately. */}}
+{{- range $version, $cfg := .Values.versions }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helloworld.fullname" $ }}-{{ $version }}
+  labels:
+    {{- include "helloworld.labels" $ | nindent 4 }}
+    version: {{ $version }}
+spec:
+  selector:
+    {{- include "helloworld.selectorLabels" (dict "root" $ "version" $version) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $.Values.containerPort }}
+      targetPort: http
+{{- end }}
