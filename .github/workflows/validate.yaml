@@ -1,0 +1,47 @@
+# Renders the chart for every environment and validates the output against
+# real Kubernetes and CRD schemas. A push to main is a deploy (Argo CD reads
+# this repo), so these checks run on every pull request.
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  # Kubernetes + CRD schemas (Gateway API, Istio, Argo CD, agentgateway, ...)
+  CRD_SCHEMAS: https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
+  NAMESPACE: team-beta
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+
+      - name: helm lint (chart defaults)
+        run: helm lint chart
+
+      - name: Render and validate every environment
+        run: |
+          set -euo pipefail
+          for values in environments/*/values.yaml; do
+            echo "::group::$values"
+            helm lint chart -f "$values"
+            helm template hello-beta chart -f "$values" --namespace "$NAMESPACE" \
+              | kubeconform -strict -summary \
+                  -schema-location default \
+                  -schema-location "$CRD_SCHEMAS"
+            echo "::endgroup::"
+          done
+
+      - name: Render with chart defaults only
+        # Catches templates that only work because an environment sets a value.
+        run: helm template hello-beta chart --namespace "$NAMESPACE" >/dev/null
