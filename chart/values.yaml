@@ -25,6 +25,28 @@ resources:
   limits:
     memory: 128Mi
 
+# Meets the "restricted" Pod Security Standard, which the platform enforces on
+# tenant namespaces: pods that don't comply are refused at admission. The
+# image has no USER, so the chart picks a non-root UID for it.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+# Voluntary disruptions (node drains, cluster upgrades) evict at most this many
+# pods of a version at a time. maxUnavailable, not minAvailable, so a
+# single-replica version can still be drained instead of blocking the node.
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
 # The shared Gateway this app's HTTPRoute attaches to. Gateways are owned
 # by the platform team (platform-infra); this chart never creates one.
 # Your namespace must carry the gateway's access label (set by the platform

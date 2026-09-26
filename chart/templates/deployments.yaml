@@ -18,6 +18,11 @@ spec:
       labels:
         {{- include "helloworld.selectorLabels" (dict "root" $ "version" $version) | nindent 8 }}
     spec:
+      # The app never calls the Kubernetes API, and ambient mesh identity comes
+      # from ztunnel, not from a token in the pod.
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
         - name: helloworld
           image: {{ required (printf "versions.%s.image is required" $version) $cfg.image }}
@@ -29,6 +34,22 @@ spec:
             httpGet:
               path: /hello
               port: http
+          livenessProbe:
+            httpGet:
+              path: /hello
+              port: http
+            periodSeconds: 20
+            failureThreshold: 3
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          volumeMounts:
+            # The root filesystem is read-only; gunicorn needs a writable /tmp.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
 {{- end }}

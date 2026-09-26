@@ -23,6 +23,9 @@ environments/lab/values.yaml  what runs in the lab cluster (versions, weights, h
 - The namespace (`team-beta`) and that it may use the `internal` gateway
 - That this repo may only create Deployments, Services, ConfigMaps,
   ServiceAccounts, HTTPRoutes, HPAs and PDBs, and only in `team-beta`
+- That pods meet the `restricted` Pod Security Standard (the chart's
+  `podSecurityContext`/`securityContext` do; a pod that doesn't is refused)
+- The namespace's ResourceQuota and LimitRange (CPU/memory ceiling, pod count)
 
 Those live in `platform-infra/argocd/tenants/team-beta.yaml`. Need something else?
 Open a PR there.

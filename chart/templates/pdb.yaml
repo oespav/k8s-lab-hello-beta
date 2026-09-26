@@ -1,0 +1,18 @@
+{{- /* One PodDisruptionBudget per version, so a node drain never takes a version down all at once. */}}
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- range $version, $cfg := .Values.versions }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "helloworld.fullname" $ }}-{{ $version }}
+  labels:
+    {{- include "helloworld.labels" $ | nindent 4 }}
+    version: {{ $version }}
+spec:
+  maxUnavailable: {{ $.Values.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "helloworld.selectorLabels" (dict "root" $ "version" $version) | nindent 6 }}
+{{- end }}
+{{- end }}
